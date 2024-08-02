@@ -1,27 +1,30 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const { Sequelize, DataTypes } = require('sequelize');
-const cors = require('cors');
-const axios = require('axios');
-const bcrypt = require('bcrypt');
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const { Sequelize, DataTypes } = require("sequelize");
+const cors = require("cors");
+const axios = require("axios");
+const bcrypt = require("bcrypt");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const { swaggerUi, specs } = require('./swagger');
+const { swaggerUi, specs } = require("./swagger");
 
 // Serve Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Middleware to check for valid JWT token
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(403).json({ error: 'A token is required for authentication' });
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token)
+    return res
+      .status(403)
+      .json({ error: "A token is required for authentication" });
 
   jwt.verify(token, jwtSecret, (err, user) => {
-    if (err) return res.status(401).json({ error: 'Invalid Token' });
+    if (err) return res.status(401).json({ error: "Invalid Token" });
     req.user = user;
     next();
   });
@@ -29,25 +32,25 @@ const authenticateToken = (req, res, next) => {
 
 // SQLite database setup
 const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: 'database.sqlite'
+  dialect: "sqlite",
+  storage: "database.sqlite",
 });
 
 // Define User model
-const User = sequelize.define('User', {
+const User = sequelize.define("User", {
   username: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true
+    unique: true,
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
     set(value) {
       const salt = bcrypt.genSaltSync(10);
-      this.setDataValue('password', bcrypt.hashSync(value, salt));
-    }
-  }
+      this.setDataValue("password", bcrypt.hashSync(value, salt));
+    },
+  },
 });
 
 // Add comparePassword method to User model
@@ -56,7 +59,7 @@ User.prototype.comparePassword = function (password) {
 };
 
 // JWT secret (should be in environment variables for production)
-const jwtSecret = 'your_jwt_secret';
+const jwtSecret = "your_jwt_secret";
 
 /**
  * @swagger
@@ -95,12 +98,12 @@ const jwtSecret = 'your_jwt_secret';
  *       500:
  *         description: Failed to register user
  */
-app.post('/register', async (req, res) => {
+app.post("/register", async (req, res) => {
   try {
     const user = await User.create(req.body);
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to register user' });
+    res.status(500).json({ error: "Failed to register user" });
   }
 });
 
@@ -124,16 +127,16 @@ app.post('/register', async (req, res) => {
  *       500:
  *         description: Failed to login
  */
-app.post('/login', async (req, res) => {
+app.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ where: { username: req.body.username } });
     if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = jwt.sign({ userId: user.id }, jwtSecret);
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to login' });
+    res.status(500).json({ error: "Failed to login" });
   }
 });
 
@@ -151,12 +154,12 @@ app.post('/login', async (req, res) => {
  *       500:
  *         description: Failed to fetch a quote
  */
-app.get('/quote', authenticateToken, async (req, res) => {
+app.get("/quote", authenticateToken, async (req, res) => {
   try {
-    const response = await axios.get('https://api.quotable.io/random');
+    const response = await axios.get("https://api.quotable.io/random");
     res.json({ quote: response.data.content });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch a quote' });
+    res.status(500).json({ error: "Failed to fetch a quote" });
   }
 });
 
@@ -172,5 +175,5 @@ app.get('/quote', authenticateToken, async (req, res) => {
 
 // Sync database and start server
 sequelize.sync().then(() => {
-  app.listen(3000, () => console.log('Server running on port 3000'));
+  app.listen(3000, () => console.log("Server running on port 3000"));
 });
