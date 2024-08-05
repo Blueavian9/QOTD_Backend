@@ -1,5 +1,5 @@
 {
-  "name": "QOTD",
+  "name": "QOTD_Backend",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -21,3 +21,5 @@
     "swagger-ui-express": "^5.0.1"
   }
 }
+
+
